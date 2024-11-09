@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:noteapp/core/utils/colors.dart';
 import 'package:noteapp/logic/create_note_cubit/cubit.dart';
 import 'package:noteapp/logic/create_note_cubit/state.dart';
@@ -14,6 +18,25 @@ class CreateNoteScreen extends StatelessWidget {
   TextEditingController headLineController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+
+  XFile ? selectedImage;
+
+  Future selectImage ()async{
+    final ImagePicker picker = ImagePicker();
+    selectedImage = await picker.pickImage(source: ImageSource.gallery);
+  }
+
+  Future <String?> uploadImage (XFile image)async{
+    
+    try{
+      final storage = FirebaseStorage.instance.ref().child("note_images/${DateTime.now().millisecondsSinceEpoch}.jpg");
+      await storage.putFile(File(image.path));
+      return await storage!.getDownloadURL();
+      
+    }catch (e){
+      print("Uploaded Error ===========$e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,16 +191,51 @@ class CreateNoteScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 50,),
+                    InkWell(
+                      onTap: selectImage,
+                      child: Container(
+                        width: 312,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Center(
+                          child: Text("Select Image",
+                            style: TextStyle(
+                                color: ColorsManager.primaryColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700
+
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16,),
 
                     InkWell(
-                      onTap: () {
-                        context.read<CreateNoteCubit>().createNote(
-                          NotesModel(
-                              description: descriptionController.text,
-                              headline: headLineController.text,
-                              time: DateTime.now(),
-                          )
-                        );
+                      onTap: ()async {
+                        if (selectedImage != null){
+                          final imageUrl = await uploadImage(selectedImage!);
+                          context.read<CreateNoteCubit>().createNote(
+                            NotesModel(
+                                description: descriptionController.text,
+                                headline: headLineController.text,
+                                time: DateTime.now(),
+                                imageUrl: imageUrl
+                            )
+                          );
+                        }else{
+                          context.read<CreateNoteCubit>().createNote(
+                              NotesModel(
+                                description: descriptionController.text,
+                                headline: headLineController.text,
+                                time: DateTime.now(),
+                              )
+                          );
+                        }
+
 
                       },
                       child: Container(

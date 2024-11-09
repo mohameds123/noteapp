@@ -4,16 +4,19 @@ class NotesModel {
   final String headline;
   final String description;
   final DateTime time;
+  String ? imageUrl;
 
   NotesModel({
     required this.description,
     required this.headline,
     required this.time,
+    this.imageUrl,
   });
 
   Map<String, dynamic> toMap() {
     return {
       "headline": headline,
+      "imageUrl": imageUrl,
       "description": description,
       "createdAt": time.toIso8601String(),
     };
@@ -23,6 +26,7 @@ class NotesModel {
     return NotesModel(
       description: map["description"] ?? "",
       headline: map["headline"] ?? "",
+      imageUrl: map["imageUrl"] ?? "",
       time: map["createdAt"] is Timestamp
           ? (map["createdAt"] as Timestamp).toDate() // Convert Timestamp to DateTime
           : map["createdAt"] != null
